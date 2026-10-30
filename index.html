@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle Galaxy</title>
+
+<style>
+:root {
+  --bg: #05010a;
+  --panel: #120b20;
+  --purple: #c900ff;
+  --pink: #ff00c8;
+  --gold: #ffd700;
+  --white: #f8f8ff;
+  --muted: #bdb2d0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Segoe UI, Arial, sans-serif;
+  color: var(--white);
+  background: radial-gradient(ellipse at top, #24103d 0%, var(--bg) 58%);
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 38px 16px 24px;
+  background: linear-gradient(180deg, #160923aa, transparent);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+  letter-spacing: .08em;
+  text-shadow: 0 0 22px var(--purple);
+}
+
+header p {
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 16px;
+}
+
+.game-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 12px;
+  margin: 12px 0 24px;
+}
+
+.pick {
+  background: linear-gradient(145deg, #211132, #0e0918);
+  border: 1px solid #6f328d;
+  color: var(--white);
+  padding: 16px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: .2s;
+  font-weight: 650;
+}
+
+.pick:hover,
+.pick.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 18px #c900ff55;
+  transform: translateY(-2px);
+}
+
+.panel {
+  background: #10091bef;
+  border: 1px solid #5d2a78;
+  border-radius: 20px;
+  padding: clamp(16px, 3vw, 28px);
+  box-shadow: 0 0 35px #8b00ff20;
+  min-height: 320px;
+}
+
+h2 {
+  margin-top: 0;
+  color: var(--gold);
+}
+
+.hint {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+button,
+.btn {
+  font: inherit;
+}
+
+.action {
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(100deg, var(--purple), #7b35ff);
+  color: white;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 5px 5px 5px 0;
+}
+
+.action:hover {
+  filter: brightness(1.15);
+}
+
+.status {
+  color: var(--gold);
+  min-height: 25px;
+  margin: 12px 0;
+}
+
+.grid {
+  display: grid;
+  gap: 4px;
+  justify-content: center;
+  margin: 20px auto;
+  max-width: 100%;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: #21152e;
+  border: 1px solid #8c45a9;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cell.selected,
+.cell.active {
+  background: var(--gold);
+  color: #13091c;
+}
+
+.sudoku {
+  grid-template-columns: repeat(9, minmax(26px, 42px));
+}
+
+.sudoku input {
+  width: 100%;
+  aspect-ratio: 1;
+  text-align: center;
+  background: #1a1026;
+  border: 1px solid #71418a;
+  color: white;
+  font-size: clamp(14px, 3vw, 20px);
+  border-radius: 4px;
+}
+
+.sudoku input:nth-child(3n) {
+  border-right: 2px solid var(--gold);
+}
+
+.sudoku input:focus {
+  outline: 2px solid var(--purple);
+}
+
+.tiles {
+  grid-template-columns: repeat(4, minmax(48px, 75px));
+}
+
+.tiles .cell {
+  aspect-ratio: 1;
+  font-size: clamp(18px, 4vw, 28px);
+}
+
+.tiles .empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+
+.pipe {
+  grid-template-columns: repeat(6, minmax(34px, 54px));
+}
+
+.pipe .cell {
+  aspect-ratio: 1;
+  font-size: 26px;
+}
+
+.wordgrid {
+  grid-template-columns: repeat(10, minmax(23px, 36px));
+}
+
+.wordgrid .cell {
+  aspect-ratio: 1;
+  font-weight: 700;
+}
+
+.memory {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(90px, 130px));
+  gap: 12px;
+  justify-content: center;
+  margin: 20px;
+}
+
+.mem {
+  height: 100px;
+  border-radius: 16px;
+  border: 2px solid var(--gold);
+  background: #29143e;
+  cursor: pointer;
+}
+
+.mem.flash {
+  background: var(--gold);
+  box-shadow: 0 0 25px var(--gold);
+}
+
+.blockgrid {
+  grid-template-columns: repeat(10, minmax(18px, 32px));
+}
+
+.blockgrid .cell {
+  aspect-ratio: 1;
+}
+
+.filled {
+  background: var(--purple) !important;
+}
+
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 18px auto;
+  border: 1px solid var(--gold);
+  background: #080510;
+  border-radius: 8px;
+}
+
+footer {
+  text-align: center;
+  padding: 28px 12px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+@media (max-width: 450px) {
+  main {
+    padding: 10px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .game-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wordgrid {
+    gap: 2px;
+  }
+
+  .sudoku {
+    gap: 2px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>✦ PUZZLE GALAXY ✦</h1>
+  <p>A Cosmic Universe of Logic &amp; Puzzles</p>
+</header>
+
+<main>
+
+  <nav class="game-picker" id="picker" aria-label="Choose a puzzle">
+    <button class="pick active" data-game="sudoku">🔢 Sudoku</button>
+    <button class="pick" data-game="fifteen">🧩 Fifteen Puzzle</button>
+    <button class="pick" data-game="pipe">🔗 Pipe Joiner</button>
+    <button class="pick" data-game="word">🔤 Word Search</button>
+    <button class="pick" data-game="memory">🧠 Memory</button>
+    <button class="pick" data-game="block">🟪 Building Block</button>
+    <button class="pick" data-game="maze">🌀 Maze</button>
+    <button class="pick" data-game="box">📦 Box Dragger</button>
+  </nav>
+
+  <section class="panel">
+    <h2 id="title">Sudoku Puzzle</h2>
+    <p class="hint" id="instructions">
+      Fill each row, column and 3×3 box with numbers 1–9.
+    </p>
+
+    <div id="game"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div id="controls"></div>
+  </section>
+
+</main>
+
+<footer>
+  PUZZLE GALAXY · Think • Play • Repeat
+</footer>
+
+<script>
+const game = document.querySelector('#game');
+const title = document.querySelector('#title');
+const instructions = document.querySelector('#instructions');
+const status = document.querySelector('#status');
+const controls = document.querySelector('#controls');
+
+let current = 'sudoku';
+let tiles = [];
+let pipeTurns = [];
+let wordSelected = new Set();
+
+const names = {
+  sudoku: 'Sudoku Puzzle',
+  fifteen: 'Fifteen Puzzle',
+  pipe: 'Pipe Joiner',
+  word: 'Word Search',
+  memory: 'Memory Challenger',
+  block: 'Building Block',
+  maze: 'Maze',
+  box: 'Box Dragger'
+};
+
+const hints = {
+  sudoku: 'Fill each row, column and 3×3 box with numbers 1–9.',
+  fifteen: 'Slide tiles into the empty space to arrange numbers 1–15 in order.',
+  pipe: 'Rotate pipe tiles to connect the start to the finish.',
+  word: 'Find the listed words in the letter grid.',
+  memory: 'Watch the sequence of lights, then repeat it in the same order.',
+  block: 'Click squares to toggle blocks and make your own pattern.',
+  maze: 'Use the arrow keys or buttons to guide the blue dot to the goal.',
+  box: 'Push the crate onto the target using the arrow controls.'
+};
+
+function btn(label, fn) {
+  const b = document.createElement('button');
+  b.className = 'action';
+  b.textContent = label;
+  b.onclick = fn;
+  controls.appendChild(b);
+}
+
+function setup(id) {
+  current = id;
+
+  document.querySelectorAll('.pick').forEach(b => {
+    b.classList.toggle('active', b.dataset.game === id);
+  });
+
+  title.textContent = names[id];
+  instructions.textContent = hints[id];
+  game.innerHTML = '';
+  controls.innerHTML = '';
+  status.textContent = '';
+
+  const games = {
+    sudoku: drawSudoku,
+    fifteen: drawFifteen,
+    pipe: drawPipe,
+    word: drawWord,
+    memory: drawMemory,
+    block: drawBlock,
+    maze: drawMaze,
+    box: drawBox
+  };
+
+  games[id]();
+}
+
+document.querySelector('#picker').addEventListener('click', e => {
+  const b = e.target.closest('[data-game]');
+  if (b) setup(b.dataset.game);
+});
+
+/* SUDOKU */
+
+function drawSudoku() {
+  const wrap = document.createElement('div');
+  wrap.className = 'grid sudoku';
+
+  for (let i = 0; i < 81; i++) {
+    const inp = document.createElement('input');
+    inp.inputMode = 'numeric';
+    inp.maxLength = 1;
+
+    inp.setAttribute(
+      'aria-label',
+      `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}`
+    );
+
+    inp.addEventListener('input', () => {
+      inp.value = /^[1-9]$/.test(inp.value) ? inp.value : '';
+    });
+
+    wrap.appendChild(inp);
+  }
+
+  game.appendChild(wrap);
+
+  btn('Check rows & columns', () => {
+    const vals = [...wrap.children].map(x => x.value);
+    let ok = true;
+
+    for (let r = 0; r < 9; r++) {
+      const a = vals.slice(r * 9, r * 9 + 9).filter(Boolean);
+      if (new Set(a).size !== a.length) ok = false;
+    }
+
+    for (let c = 0; c < 9; c++) {
+      const a = [];
+
+      for (let r = 0; r < 9; r++) {
+        if (vals[r * 9 + c]) a.push(vals[r * 9 + c]);
+      }
+
+      if (new Set(a).size !== a.length) ok = false;
+    }
+
+    status.textContent = ok
+      ? 'No duplicate numbers found in any row or column.'
+      : 'There are duplicate numbers in a row or column.';
+  });
+
+  btn('Clear grid', () => {
+    wrap.querySelectorAll('input').forEach(x => x.value = '');
+    status.textContent = '';
+  });
+}
+
+/* FIFTEEN PUZZLE */
+
+function drawFifteen() {
+  tiles = [...Array(15)].map((_, i) => i + 1).concat(0);
+
+  for (let i = tiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+  }
+
+  if (!solvable(tiles)) {
+    [tiles[0], tiles[1]] = [tiles[1], tiles[0]];
+  }
+
+  const board = document.createElement('div');
+  board.className = 'grid tiles';
+
+  function render() {
+    board.innerHTML = '';
+
+    tiles.forEach((n, i) => {
+      const c = document.createElement('div');
+      c.className = 'cell' + (!n ? ' empty' : '');
+      c.textContent = n || '';
+
+      c.onclick = () => {
+        const z = tiles.indexOf(0);
+
+        if (
+          [i - 1, i + 1, i - 4, i + 4].includes(z) &&
+          !(Math.abs(i - z) === 1 &&
+            Math.floor(i / 4) !== Math.floor(z / 4))
+        ) {
+          [tiles[i], tiles[z]] = [tiles[z], tiles[i]];
+          render();
+
+          if (tiles.every((v, k) => v === ((k + 1) % 16))) {
+            status.textContent = 'Puzzle solved! Great job.';
+          }
+        }
+      };
+
+      board.appendChild(c);
+    });
+  }
+
+  function solvable(a) {
+    let inv = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      for (let j = i + 1; j < a.length; j++) {
+        if (a[i] && a[j] && a[i] > a[j]) inv++;
+      }
+    }
+
+    return (inv + 4 - Math.floor(a.indexOf(0) / 4)) % 2 === 1;
+  }
+
+  game.appendChild(board);
+  render();
+
+  btn('Shuffle', drawFifteen);
+}
+
+/* PIPE JOINER */
+
+function drawPipe() {
+  const board = document.createElement('div');
+  board.className = 'grid pipe';
+
+  const symbols = ['│', '└', '─', '┌', '┐', '┘'];
+  pipeTurns = [];
+
+  for (let i = 0; i < 36; i++) {
+    const type = i === 0 ? 'S' :
+                 i === 35 ? 'F' :
+                 symbols[Math.floor(Math.random() * symbols.length)];
+
+    pipeTurns.push({ type, rot: 0 });
+
+    const c = document.createElement('button');
+    c.className = 'cell';
+    c.textContent = type;
+    c.setAttribute('aria-label', 'Rotate pipe');
+
+    c.onclick = () => {
+      if (type === 'S' || type === 'F') return;
+
+      pipeTurns[i].rot = (pipeTurns[i].rot + 90) % 360;
+      c.style.transform = `rotate(${pipeTurns[i].rot}deg)`;
+    };
+
+    board.appendChild(c);
+  }
+
+  game.appendChild(board);
+
+  btn('New pipe board', drawPipe);
+
+  status.textContent =
+    'Rotate the pipe pieces. This demo does not automatically validate the path.';
+}
+
+/* WORD SEARCH */
+
+function drawWord() {
+  const words = ['STAR', 'MOON', 'MARS', 'NOVA'];
+
+  const letters = Array.from(
+    { length: 100 },
+    () => String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  );
+
+  function place(w, row, col, dir) {
+    for (let i = 0; i < w.length; i++) {
+      letters[
+        (row + (dir === 'v' ? i : 0)) * 10 +
+        col + (dir === 'h' ? i : 0)
+      ] = w[i];
+    }
+  }
+
+  place('STAR', 1, 1, 'h');
+  place('MOON', 3, 2, 'h');
+  place('MARS', 5, 1, 'h');
+  place('NOVA', 7, 4, 'h');
+
+  const board = document.createElement('div');
+  board.className = 'grid wordgrid';
+
+  wordSelected = new Set();
+
+  letters.forEach((l, i) => {
+    const c = document.createElement('button');
+    c.className = 'cell';
+    c.textContent = l;
+
+    c.onclick = () => {
+      c.classList.toggle('selected');
+
+      if (wordSelected.has(i)) {
+        wordSelected.delete(i);
+      } else {
+        wordSelected.add(i);
+      }
+
+      checkWords();
+    };
+
+    board.appendChild(c);
+  });
+
+  game.appendChild(board);
+
+  const list = document.createElement('p');
+  list.innerHTML = '<b>Find:</b> STAR · MOON · MARS · NOVA';
+  game.appendChild(list);
+
+  const found = new Set();
+
+  function checkWords() {
+    const chosen = [...wordSelected].sort((a, b) => a - b);
+
+    for (const w of words) {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c <= 10 - w.length; c++) {
+          const ids = Array.from(w, (_, k) => r * 10 + c + k);
+
+          if (
+            ids.every(i => chosen.includes(i)) &&
+            ids.map(i => letters[i]).join('') === w
+          ) {
+            found.add(w);
+          }
+        }
+      }
+    }
+
+    status.textContent = found.size === 4
+      ? 'All words found!'
+      : `Found ${found.size} of 4 words.`;
+  }
+
+  btn('New word grid', drawWord);
+}
+
+/* MEMORY GAME */
+
+function drawMemory() {
+  const wrap = document.createElement('div');
+  wrap.className = 'memory';
+
+  const buttons = [];
+
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('button');
+    b.className = 'mem';
+    b.setAttribute('aria-label', `Memory button ${i + 1}`);
+    b.onclick = () => memoryTap(i);
+
+    buttons.push(b);
+    wrap.appendChild(b);
+  }
+
+  game.appendChild(wrap);
+
+  let seq = [];
+  let input = [];
+  let accept = false;
+
+  async function flash(i) {
+    buttons[i].classList.add('flash');
+    await new Promise(r => setTimeout(r, 350));
+    buttons[i].classList.remove('flash');
+    await new Promise(r => setTimeout(r, 180));
+  }
+
+  async function show() {
+    accept = false;
+
+    for (const n of seq) {
+      await flash(n);
+    }
+
+    accept = true;
+  }
+
+  function start() {
+    seq = [];
+    input = [];
+    status.textContent = 'Watch the sequence!';
+    next();
+  }
+
+  function next() {
+    seq.push(Math.floor(Math.random() * 4));
+    input = [];
+    show();
+  }
+
+  async function memoryTap(i) {
+    if (!accept) return;
+
+    await flash(i);
+    input.push(i);
+
+    if (input[input.length - 1] !== seq[input.length - 1]) {
+      accept = false;
+      status.textContent =
+        `Game over — you reached level ${seq.length}. Press Start to try again.`;
+      return;
+    }
+
+    if (input.length === seq.length) {
+      status.textContent = 'Correct! Next level…';
+      setTimeout(next, 500);
+    }
+  }
+
+  btn('Start / Restart', start);
+}
+
+/* BUILDING BLOCK */
+
+function drawBlock() {
+  const board = document.createElement('div');
+  board.className = 'grid blockgrid';
+
+  for (let i = 0; i < 100; i++) {
+    const c = document.createElement('button');
+    c.className = 'cell';
+    c.setAttribute('aria-label', `Block ${i + 1}`);
+    c.onclick = () => c.classList.toggle('filled');
+
+    board.appendChild(c);
+  }
+
+  game.appendChild(board);
+
+  btn('Clear blocks', () => {
+    board.querySelectorAll('.cell').forEach(c => {
+      c.classList.remove('filled');
+    });
+  });
+
+  btn('Random pattern', () => {
+    board.querySelectorAll('.cell').forEach(c => {
+      c.classList.toggle('filled', Math.random() > 0.68);
+    });
+  });
+}
+
+/* MAZE */
+
+const mazeMap = [
+  '##########',
+  '#S...#...#',
+  '###.#.#..#',
+  '#...#.#.##',
+  '#.###....#',
+  '#.....##.#',
+  '##.##....#',
+  '#...####.#',
+  '#.......G#',
+  '##########'
+];
+
+function drawMaze() {
+  let pos = mazeMap.join('').indexOf('S');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+
+  game.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+
+  function render() {
+    ctx.clearRect(0, 0, 400, 400);
+
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const ch = mazeMap[r][c];
+
+        ctx.fillStyle = ch === '#' ? '#28123c' : '#090611';
+        ctx.fillRect(c * 40, r * 40, 39, 39);
+
+        if (ch === 'S' || ch === 'G') {
+          ctx.fillStyle = ch === 'S' ? '#ffd700' : '#ff00c8';
+          ctx.fillText(ch, c * 40 + 14, r * 40 + 25);
+        }
+      }
+    }
+
+    ctx.fillStyle = '#69d7ff';
+    ctx.beginPath();
+
+    ctx.arc(
+      (pos % 10) * 40 + 20,
+      Math.floor(pos / 10) * 40 + 20,
+      11,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+  }
+
+  function move(dr, dc) {
+    const r = Math.floor(pos / 10) + dr;
+    const c = pos % 10 + dc;
+
+    if (
+      r < 0 || r > 9 ||
+      c < 0 || c > 9 ||
+      mazeMap[r][c] === '#'
+    ) return;
+
+    pos = r * 10 + c;
+    render();
+
+    if (mazeMap[r][c] === 'G') {
+      status.textContent = 'Maze complete!';
+    }
+  }
+
+  function key(e) {
+    if (current !== 'maze') return;
+
+    const d = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1]
+    }[e.key];
+
+    if (d) {
+      e.preventDefault();
+      move(...d);
+    }
+  }
+
+  render();
+  window.onkeydown = key;
+
+  btn('↑', () => move(-1, 0));
+  btn('←', () => move(0, -1));
+  btn('↓', () => move(1, 0));
+  btn('→', () => move(0, 1));
+
+  btn('Restart maze', () => {
+    pos = mazeMap.join('').indexOf('S');
+    render();
+    status.textContent = '';
+  });
+}
+
+/* BOX DRAGGER */
+
+function drawBox() {
+  const map = [
+    '##########',
+    '#........#',
+    '#..C.....#',
+    '#..#.....#',
+    '#..#..T..#',
+    '#........#',
+    '#........#',
+    '#........#',
+    '#P.......#',
+    '##########'
+  ];
+
+  const grid = map.map(r => r.split(''));
+
+  let p = [8, 1];
+  let c = [2, 3];
+  const t = [4, 6];
+
+  const board = document.createElement('div');
+  board.className = 'grid';
+  board.style.gridTemplateColumns = 'repeat(10, minmax(18px, 32px))';
+
+  function render() {
+    board.innerHTML = '';
+
+    for (let r = 0; r < 10; r++) {
+      for (let col = 0; col < 10; col++) {
+        const b = document.createElement('button');
+
+        b.className = 'cell';
+        b.style.aspectRatio = '1';
+        b.style.fontSize = 'clamp(10px, 2vw, 18px)';
+
+        b.textContent =
+          (r === p[0] && col === p[1]) ? '🟦' :
+          (r === c[0] && col === c[1]) ? '📦' :
+          (r === t[0] && col === t[1]) ? '🟡' :
+          grid[r][col] === '#' ? '' : '·';
+
+        board.appendChild(b);
+      }
+    }
+  }
+
+  function move(dr, dc) {
+    const nr = p[0] + dr;
+    const nc = p[1] + dc;
+
+    if (grid[nr][nc] === '#') return;
+
+    if (nr === c[0] && nc === c[1]) {
+      const cr = nr + dr;
+      const cc = nc + dc;
+
+      if (grid[cr][cc] === '#') return;
+
+      c = [cr, cc];
+    }
+
+    p = [nr, nc];
+    render();
+
+    if (c[0] === t[0] && c[1] === t[1]) {
+      status.textContent = 'You placed the crate on the target!';
+    }
+  }
+
+  function key(e) {
+    if (current !== 'box') return;
+
+    const d = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1]
+    }[e.key];
+
+    if (d) {
+      e.preventDefault();
+      move(...d);
+    }
+  }
+
+  window.onkeydown = key;
+
+  game.appendChild(board);
+  render();
+
+  btn('↑', () => move(-1, 0));
+  btn('←', () => move(0, -1));
+  btn('↓', () => move(1, 0));
+  btn('→', () => move(0, 1));
+
+  btn('Restart', drawBox);
+}
+
+/* START GAME */
+
+setup('sudoku');
+</script>
+
+</body>
+</html>
